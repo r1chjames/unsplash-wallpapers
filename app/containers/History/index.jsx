@@ -1,7 +1,6 @@
 // @flow
 
 import React, { memo, useEffect, useState } from 'react';
-import storage from 'electron-json-storage';
 import { connect } from 'react-redux';
 import type { history as historyType } from 'history';
 import type { Map as MapType } from 'immutable';
@@ -23,7 +22,7 @@ const History = memo(({ setPhotoAction, history } : Props) => {
   const [getPicturesLoading, setGetPicturesLoading] = useState(true);
 
   useEffect(() => {
-    storage.get('pictures', (error, pictures) => {
+    window.electronAPI.storage.get('pictures').then((pictures) => {
       if (pictures && pictures.list) {
         setPictures(pictures.list);
         wallpaper.get()
@@ -64,7 +63,7 @@ const History = memo(({ setPhotoAction, history } : Props) => {
               }
             </div>
           )
-          : !getPicturesLoading && <p className="empty-history">You haven’t set any wallpaper yet</p>
+          : !getPicturesLoading && <p className="empty-history">You haven't set any wallpaper yet</p>
       }
     </StyledHistory>
   );

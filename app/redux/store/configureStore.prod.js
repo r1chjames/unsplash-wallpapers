@@ -4,8 +4,6 @@ import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
 import { routerMiddleware } from 'connected-react-router';
 import createSagaMiddleware from 'redux-saga';
-import * as Promise from 'bluebird';
-import electronJsonStorage from 'electron-json-storage';
 import { fromJS } from 'immutable';
 import API from 'app/utils/xhrWrapper';
 import setTheme from 'app/utils/setTheme';
@@ -14,7 +12,6 @@ import persistReduxState from 'app/utils/persistReduxState';
 import createRootReducer from '../reducers';
 import sagas from '../sagas';
 
-const storage = Promise.promisifyAll(electronJsonStorage);
 const rootReducer = createRootReducer(history);
 const sagaMiddleware = createSagaMiddleware();
 const enhancer = applyMiddleware(
@@ -24,7 +21,7 @@ const enhancer = applyMiddleware(
 );
 
 const configureStore = async () => {
-  const initialState = await storage.getAsync('redux');
+  const initialState = await window.electronAPI.storage.get('redux');
   const store = createStore(
     rootReducer,
     fromJS(initialState),

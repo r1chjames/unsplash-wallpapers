@@ -7,9 +7,9 @@ import {
   takeLatest,
   select,
   delay,
+  call,
 } from 'redux-saga/effects';
 import axios from 'axios';
-import storage from 'electron-json-storage';
 import wallpaper from 'wallpaper';
 import fs from 'fs';
 import os from 'os';
@@ -55,16 +55,15 @@ function* setWallpaper() {
         `unsplash-${photoData.get('id')}.png`,
       );
       picturePath = path.normalize(picturePath);
-      storage.get('pictures', (error, pictures) => {
-        storedPictures = pictures;
-        if (pictures.list && pictures.list.length > 0) {
-          pictures.list.forEach((pictureItem) => {
-            if (pictureItem.id === photoData.get('id')) {
-              hasPicture = true;
-            }
-          });
-        }
-      });
+      const pictures = yield call([window.electronAPI.storage, 'get'], 'pictures');
+      storedPictures = pictures;
+      if (pictures.list && pictures.list.length > 0) {
+        pictures.list.forEach((pictureItem) => {
+          if (pictureItem.id === photoData.get('id')) {
+            hasPicture = true;
+          }
+        });
+      }
       if (!hasPicture) {
         let base64Image = yield axios
           .get(`${photoData.getIn(['urls', 'raw'])}&w=${Math.round(screen.availWidth / 2)}&dpr=2`, {
@@ -83,9 +82,9 @@ function* setWallpaper() {
       }
       yield wallpaper.set(picturePath, { scale: 'auto' });
       yield put({ type: SET_WALLPAPER_SUCCESS });
-      storage.set('autoUpdateWallpaperLastUpdate', moment().format('MM/DD/YYYY HH:mm:ss'));
+      yield call([window.electronAPI.storage, 'set'], 'autoUpdateWallpaperLastUpdate', moment().format('MM/DD/YYYY HH:mm:ss'));
       if (!hasPicture) {
-        storage.set('pictures', {
+        yield call([window.electronAPI.storage, 'set'], 'pictures', {
           list: [
             { ...photoData.toJS(), path: picturePath },
             ...((storedPictures.list && storedPictures.list.length > 0) ? storedPictures.list : []),

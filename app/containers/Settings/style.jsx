@@ -62,6 +62,33 @@ export default styled.div`
         outline: none;
       }
     }
+    &.api-key {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+      > input {
+        margin-top: 5px;
+        width: 220px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 11px;
+        outline: none;
+        text-align: center;
+        background: ${boxsBackgroundColor};
+        color: ${textsColor};
+        &:focus {
+          border-color: #888;
+        }
+      }
+      > .saved-indicator {
+        margin-top: 3px;
+        font-size: 10px;
+        color: #4caf50;
+        font-weight: normal;
+      }
+    }
   }
   > .choose-theme {
       text-align: center;

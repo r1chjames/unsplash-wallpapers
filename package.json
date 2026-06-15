@@ -6,10 +6,10 @@
   "scripts": {
     "release": "package",
     "build": "concurrently \"yarn build-main\" \"yarn build-renderer\"",
-    "build-dll": "cross-env NODE_ENV=development webpack --config ./configs/webpack.config.renderer.dev.dll.babel.js --colors",
+    "build-dll": "cross-env NODE_ENV=development NODE_OPTIONS=--openssl-legacy-provider webpack --config ./configs/webpack.config.renderer.dev.dll.babel.js --colors",
     "build-e2e": "cross-env E2E_BUILD=true yarn build",
-    "build-main": "cross-env NODE_ENV=production webpack --config ./configs/webpack.config.main.prod.babel.js --colors",
-    "build-renderer": "cross-env NODE_ENV=production webpack --config ./configs/webpack.config.renderer.prod.babel.js --colors",
+    "build-main": "cross-env NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider webpack --config ./configs/webpack.config.main.prod.babel.js --colors",
+    "build-renderer": "cross-env NODE_ENV=production NODE_OPTIONS=--openssl-legacy-provider webpack --config ./configs/webpack.config.renderer.prod.babel.js --colors",
     "dev": "cross-env NODE_ENV=development START_HOT=1 node -r @babel/register ./internals/scripts/CheckPortInUse.js && cross-env START_HOT=1 yarn start-renderer-dev",
     "flow": "flow",
     "flow-typed": "rimraf flow-typed/npm && flow-typed install --overwrite || true",
@@ -17,12 +17,9 @@
     "lint-fix": "yarn --silent lint --fix; exit 0",
     "lint-styles": "stylelint --ignore-path .eslintignore '**/*.*(css|scss)' --syntax scss",
     "lint-styles-fix": "yarn --silent lint-styles --fix; exit 0",
-    "package": "yarn build && env-cmd ./.env electron-builder build",
-    "package-all": "yarn build && env-cmd ./.env electron-builder build -mwl",
-    "package-ci": "yarn build && env-cmd ./.env electron-builder build -mwl --publish always",
-    "package-linux": "yarn build && electron-builder build --linux",
-    "package-win": "yarn build && electron-builder build --win --x64",
-    "postinstall": "yarn flow-typed && electron-builder install-app-deps package.json && yarn build-dll && opencollective-postinstall",
+    "package": "yarn build && env-cmd ./.env electron-builder build --mac --arm64",
+    "package:publish": "yarn build && env-cmd ./.env electron-builder build --mac --arm64 --publish always",
+    "postinstall": "electron-builder install-app-deps && yarn build-dll && opencollective-postinstall",
     "postlint-fix": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{*{js,jsx,json},babelrc,eslintrc,prettierrc,stylelintrc}'",
     "postlint-styles-fix": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{css,scss}'",
     "prestart": "yarn build",
@@ -45,8 +42,17 @@
       "app/app.html",
       "app/main.prod.js",
       "app/main.prod.js.map",
+      "app/preload.js",
       "package.json"
     ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ]
+    },
     "dmg": {
       "contents": [
         {
@@ -61,27 +67,13 @@
         }
       ]
     },
-    "win": {
-      "target": [
-        "nsis",
-        "msi"
-      ]
-    },
-    "linux": {
-      "category": "Settings",
-      "target": [
-        "deb",
-        "rpm",
-        "AppImage"
-      ]
-    },
     "directories": {
       "buildResources": "resources",
       "output": "release"
     },
     "publish": {
       "provider": "github",
-      "owner": "soroushchehresa",
+      "owner": "r1chjames",
       "repo": "unsplash-wallpapers",
       "private": false
     }
@@ -161,9 +153,9 @@
     "cross-spawn": "^6.0.5",
     "css-loader": "^1.0.1",
     "detect-port": "^1.3.0",
-    "electron": "^8",
-    "electron-builder": "^22.3.6",
-    "electron-rebuild": "^1.10.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^25.0.0",
+    "electron-rebuild": "^3.2.0",
     "env-cmd": "^8.0.2",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.7.0",
@@ -231,7 +223,7 @@
     "electron-devtools-installer": "^3.1.1",
     "electron-json-storage": "^4.3.0",
     "electron-log": "^4.3.0",
-    "electron-updater": "^4.3.5",
+    "electron-updater": "^6.0.0",
     "fix-path": "^2.1.0",
     "font-awesome": "^4.7.0",
     "history": "^4.7.2",

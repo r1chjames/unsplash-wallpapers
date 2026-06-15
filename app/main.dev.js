@@ -5,6 +5,7 @@ const {
   BrowserWindow,
   Tray,
   shell,
+  ipcMain,
 } = require('electron');
 const path = require('path');
 const storage = require('electron-json-storage');
@@ -15,11 +16,20 @@ const log = require('electron-log');
 const width = 375;
 const height = 385;
 
-app.allowRendererProcessReuse = true;
-
 if (process.platform === 'darwin') {
   app.dock.hide();
 }
+
+// IPC handlers for renderer process requests
+ipcMain.handle('relaunch-and-exit', () => {
+  app.relaunch();
+  app.exit(0);
+});
+
+ipcMain.handle('close-window', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) win.close();
+});
 
 app.on('ready', () => {
   setTimeout(() => {
@@ -66,12 +76,11 @@ app.on('ready', () => {
       }
     };
 
-    tray.on('right-click', toggleWindow);
-    tray.on('double-click', toggleWindow);
     tray.on('click', (event) => {
       toggleWindow();
 
-      if (window.isVisible() && process.defaultApp && event.metaKey) {
+      // Only check for devtools on left-click (not ctrl+click / right-click)
+      if (!event.ctrlKey && window.isVisible() && process.defaultApp && event.metaKey) {
         window.openDevTools({ mode: 'detach' });
       }
     });
@@ -86,7 +95,10 @@ app.on('ready', () => {
       fullscreenable: false,
       transparent: true,
       webPreferences: {
+        contextIsolation: false,
         nodeIntegration: true,
+        sandbox: false,
+        preload: path.join(__dirname, 'preload.js'),
       },
     });
 
@@ -98,7 +110,7 @@ app.on('ready', () => {
       }
     });
 
-    window.webContents.once('did-frame-finish-load', function() {
+    window.webContents.once('did-finish-load', () => {
       autoUpdater.checkForUpdatesAndNotify();
       if (process.env.NODE_ENV === 'development') {
         window.webContents.openDevTools();

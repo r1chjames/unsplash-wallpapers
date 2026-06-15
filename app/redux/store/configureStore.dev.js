@@ -5,8 +5,6 @@ import thunk from 'redux-thunk';
 import { routerMiddleware } from 'connected-react-router';
 import { createLogger } from 'redux-logger';
 import createSagaMiddleware from 'redux-saga';
-import * as Promise from 'bluebird';
-import electronJsonStorage from 'electron-json-storage';
 import { Iterable, fromJS } from 'immutable';
 import history from 'app/utils/history';
 import API from 'app/utils/xhrWrapper';
@@ -15,11 +13,10 @@ import persistReduxState from 'app/utils/persistReduxState';
 import createRootReducer from '../reducers';
 import sagas from '../sagas';
 
-const storage = Promise.promisifyAll(electronJsonStorage);
 const rootReducer = createRootReducer(history);
 const sagaMiddleware = createSagaMiddleware();
 const configureStore = async () => {
-  const initialState = await storage.getAsync('redux');
+  const initialState = await window.electronAPI.storage.get('redux');
   const middleware = [
     sagaMiddleware,
     thunk.withExtraArgument(API),

@@ -6,7 +6,6 @@ import { Route } from 'react-router';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import moment from 'moment';
 import { connect } from 'react-redux';
-import storage from 'electron-json-storage';
 import { withRouter } from 'react-router';
 import Navbar from 'app/components/Navbar';
 import { getPhoto } from 'app/containers/Home/redux';
@@ -27,35 +26,34 @@ const App = ({
   getPhotoAction,
   activeCategory,
 } : Props) => {
-  const checkUpdateTime = async () => {
-    storage.getMany(['autoUpdateWallpaperSchedule', 'autoUpdateWallpaperLastUpdate'], (error, data) => {
-      if (error) {
-        console.log(error);
-      } else if (Object.keys(data.autoUpdateWallpaperLastUpdate).length && Object.keys(data.autoUpdateWallpaperSchedule).length) {
-        const now = moment();
-        const last = moment(data.autoUpdateWallpaperLastUpdate, 'MM/DD/YYYY HH:mm:ss');
-        const diffTime = now.diff(last, 'hours');
-        switch (data.autoUpdateWallpaperSchedule) {
-          case 'Hourly':
-            if (diffTime >= 1) {
-              getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
-            }
-            break;
-          case 'Daily':
-            if (diffTime >= 24) {
-              getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
-            }
-            break;
-          case 'Weekly':
-            if (diffTime >= 168) {
-              getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
-            }
-            break;
-          default:
-            break;
+  const checkUpdateTime = () => {
+    window.electronAPI.storage.getMany(['autoUpdateWallpaperSchedule', 'autoUpdateWallpaperLastUpdate'])
+      .then((data) => {
+        if (Object.keys(data.autoUpdateWallpaperLastUpdate || {}).length && Object.keys(data.autoUpdateWallpaperSchedule || {}).length) {
+          const now = moment();
+          const last = moment(data.autoUpdateWallpaperLastUpdate, 'MM/DD/YYYY HH:mm:ss');
+          const diffTime = now.diff(last, 'hours');
+          switch (data.autoUpdateWallpaperSchedule) {
+            case 'Hourly':
+              if (diffTime >= 1) {
+                getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
+              }
+              break;
+            case 'Daily':
+              if (diffTime >= 24) {
+                getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
+              }
+              break;
+            case 'Weekly':
+              if (diffTime >= 168) {
+                getPhotoAction({ setAutomaticWallpaper: true, activeCategory });
+              }
+              break;
+            default:
+              break;
+          }
         }
-      }
-    });
+      });
   };
   useEffect(() => {
     setInterval(checkUpdateTime, 10000);

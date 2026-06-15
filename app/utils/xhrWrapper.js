@@ -46,9 +46,13 @@ class Client {
   }
 
   static async getHeaderDataDecoration() {
+    let accessKey = '';
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      accessKey = await window.electronAPI.getApiKey();
+    }
     return {
       headers: {
-        authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
+        authorization: `Client-ID ${accessKey || ''}`,
       },
     };
   }
