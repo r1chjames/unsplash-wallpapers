@@ -46,6 +46,11 @@
       "package.json"
     ],
     "mac": {
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": null,
+      "entitlementsInherit": null,
+      "identity": null,
       "target": [
         {
           "target": "dmg",
@@ -53,6 +58,7 @@
         }
       ]
     },
+    "afterPack": "./scripts/adhoc-sign.js",
     "dmg": {
       "contents": [
         {

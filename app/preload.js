@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer, nativeTheme, app } = require('electron');
+const { ipcRenderer, nativeTheme, app } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -56,7 +56,8 @@ const storage = {
     }),
 };
 
-contextBridge.exposeInMainWorld('electronAPI', {
+// contextIsolation: false — set directly on window, no contextBridge needed
+window.electronAPI = {
   platform: process.platform,
 
   // Theme
@@ -80,8 +81,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Storage
   storage,
-
-  // Unsplash API key
-  getApiKey: () => storage.get('unsplashAccessKey'),
-  setApiKey: (key) => storage.set('unsplashAccessKey', key),
-});
+};

@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +30,6 @@ jobs:
         run: |
           echo "UNSPLASH_ACCESS_KEY=${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env
           echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> .env
-          echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> .env
 
       - name: Build
         run: NODE_OPTIONS=--openssl-legacy-provider yarn build
@@ -37,9 +38,46 @@ jobs:
         run: npx electron-builder build --mac --arm64 --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Verify code signature
+        if: github.ref == 'refs/heads/master'
+        run: |
+          APP=$(find release -name "*.app" -type d | head -1)
+          if [ -n "$APP" ]; then
+            echo "=== App bundle: $APP ==="
+            echo "--- Contents ---"
+            ls -la "$APP/Contents/"
+            ls -la "$APP/Contents/Resources/"
+            echo "--- Preload check ---"
+            ls -la "$APP/Contents/Resources/app/" 2>/dev/null || echo "No app dir in Resources"
+            echo "--- Code signature ---"
+            codesign -dvvv "$APP" 2>&1 || echo "No signature found"
+          else
+            echo "No .app bundle found in release/"
+            ls -la release/
+          fi
+
+      - name: Get package version
+        if: github.ref == 'refs/heads/master'
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Delete old release
+        if: github.ref == 'refs/heads/master'
+        continue-on-error: true
+        run: gh release delete v${{ steps.pkg.outputs.version }} --yes --cleanup-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
         with:
-          name: unsplash-wallpapers-mac-arm64
-          path: release/*.dmg
+          name: v${{ steps.pkg.outputs.version }}
+          tag_name: v${{ steps.pkg.outputs.version }}
+          files: release/*.dmg
+          body: |
+            Unsplash Wallpapers v${{ steps.pkg.outputs.version }} — macOS ARM64
+
+            Built from [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})

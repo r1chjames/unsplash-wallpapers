@@ -38,11 +38,14 @@ app.on('ready', () => {
     );
     let window = null;
     const showWindow = () => {
+      log.info('Showing window...');
       const trayPos = tray.getBounds();
+      log.info(`Tray bounds: x=${trayPos.x} y=${trayPos.y} w=${trayPos.width} h=${trayPos.height}`);
       const windowPos = window.getBounds();
+      log.info(`Window bounds: x=${windowPos.x} y=${windowPos.y} w=${windowPos.width} h=${windowPos.height}`);
       const { screen } = require('electron'); // eslint-disable-line
       const primaryDisplay = screen.getPrimaryDisplay();
-      const { width: screenWidth } = primaryDisplay.size;
+      const { width: screenWidth, height: screenHeight } = primaryDisplay.size;
       let x = 0;
       let y = 0;
 
@@ -63,9 +66,11 @@ app.on('ready', () => {
           y = 10;
           break;
       }
+      log.info(`Calculated position: x=${x} y=${y} (screen: ${screenWidth}x${screenHeight})`);
       window.setPosition(x, y, false);
       window.show();
       window.focus();
+      log.info('Window shown and focused');
     };
 
     const toggleWindow = () => {
@@ -77,12 +82,22 @@ app.on('ready', () => {
     };
 
     tray.on('click', (event) => {
+      log.info('Tray clicked');
       toggleWindow();
 
-      // Only check for devtools on left-click (not ctrl+click / right-click)
-      if (!event.ctrlKey && window.isVisible() && process.defaultApp && event.metaKey) {
+      if (window.isVisible() && process.defaultApp && event.metaKey) {
         window.openDevTools({ mode: 'detach' });
       }
+    });
+
+    tray.on('right-click', () => {
+      log.info('Tray right-clicked');
+      toggleWindow();
+    });
+
+    tray.on('double-click', () => {
+      log.info('Tray double-clicked');
+      toggleWindow();
     });
 
     window = new BrowserWindow({
@@ -105,16 +120,24 @@ app.on('ready', () => {
     window.loadURL(`file://${__dirname}/app.html`);
 
     window.on('blur', () => {
-      if (!window.webContents.isDevToolsOpened()) {
-        window.hide();
-      }
+      log.info('Window blurred, devtools open:', window.webContents.isDevToolsOpened());
+      setTimeout(() => {
+        if (!window.isDestroyed() && !window.webContents.isDevToolsOpened()) {
+          window.hide();
+          log.info('Window hidden due to blur');
+        }
+      }, 150);
     });
 
     window.webContents.once('did-finish-load', () => {
+      log.info('Window finished loading');
       autoUpdater.checkForUpdatesAndNotify();
       if (process.env.NODE_ENV === 'development') {
         window.webContents.openDevTools();
       }
+      // Auto-show on startup for diagnostics
+      log.info('Auto-showing window on startup...');
+      showWindow();
     });
 
     window.webContents.on('will-navigate', (event, url) => {
