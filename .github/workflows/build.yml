@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +30,6 @@ jobs:
         run: |
           echo "UNSPLASH_ACCESS_KEY=${{ secrets.UNSPLASH_ACCESS_KEY }}" > .env
           echo "GH_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> .env
-          echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> .env
 
       - name: Build
         run: NODE_OPTIONS=--openssl-legacy-provider yarn build
@@ -38,8 +39,23 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Delete old continuous release
+        if: github.ref == 'refs/heads/master'
+        continue-on-error: true
+        run: gh release delete continuous --yes --cleanup-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
         with:
-          name: unsplash-wallpapers-mac-arm64
-          path: release/*.dmg
+          name: Continuous Build
+          tag_name: continuous
+          prerelease: true
+          make_latest: false
+          files: release/*.dmg
+          body: |
+            Automated build from master branch (`${{ github.sha }}`).
+
+            Commit: [${{ github.event.head_commit.message }}](${{ github.event.head_commit.url }})
