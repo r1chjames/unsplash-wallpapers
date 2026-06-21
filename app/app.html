@@ -4,30 +4,35 @@
     <meta charset="utf-8" />
     <title>Unsplash Wallpapers</title>
     <script>
+      console.log('HTML head script executing');
+      window.onerror = function(msg, url, line, col, error) {
+        console.error('HTML onerror:', msg, 'at', url, 'line', line);
+        return false;
+      };
       (function() {
         if (!process.env.HOT) {
           const link = document.createElement('link');
           link.rel = 'stylesheet';
           link.href = './dist/style.css';
-          // HACK: Writing the script path should be done with webpack
+          link.onerror = function() {
+            console.log('style.css failed to load (expected - using styled-components)');
+          };
           document.getElementsByTagName('head')[0].appendChild(link);
         }
       })();
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">Loading...</div>
     <script>
+      console.log('HTML body script executing');
       {
         const scripts = [];
 
-        // Dynamically insert the DLL script in development env in the
-        // renderer process
         if (process.env.NODE_ENV === 'development') {
           scripts.push('../dll/renderer.dev.dll.js');
         }
 
-        // Dynamically insert the bundled app script in the renderer process
         const port = process.env.PORT || 1212;
         scripts.push(
           process.env.HOT
@@ -35,11 +40,19 @@
             : './dist/renderer.prod.js'
         );
 
-        document.write(
-          scripts
-            .map(script => `<script defer src="${script}"><\/script>`)
-            .join('')
-        );
+        console.log('Loading scripts:', scripts);
+        
+        scripts.forEach(script => {
+          const scriptEl = document.createElement('script');
+          scriptEl.src = script;
+          scriptEl.onerror = function() {
+            console.error('Failed to load script:', script);
+          };
+          scriptEl.onload = function() {
+            console.log('Script loaded:', script);
+          };
+          document.body.appendChild(scriptEl);
+        });
       }
     </script>
   </body>

@@ -76,7 +76,10 @@ jobs:
         with:
           name: v${{ steps.pkg.outputs.version }}
           tag_name: v${{ steps.pkg.outputs.version }}
-          files: release/*.dmg
+          files: |
+            release/*.dmg
+            release/*.blockmap
+            release/latest-mac.yml
           body: |
             Unsplash Wallpapers v${{ steps.pkg.outputs.version }} — macOS ARM64
 

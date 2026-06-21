@@ -6,6 +6,7 @@ const {
   Tray,
   shell,
   ipcMain,
+  nativeTheme,
 } = require('electron');
 const path = require('path');
 const storage = require('electron-json-storage');
@@ -20,15 +21,49 @@ if (process.platform === 'darwin') {
   app.dock.hide();
 }
 
+let mainWindow = null;
+let showMainWindow = null;
+let pendingActivate = false;
+
+// On macOS, clicking a dock-hidden app's tray icon fires 'activate'.
+// Handle the case where it fires before the window is ready.
+app.on('activate', () => {
+  log.info('App activated');
+  if (mainWindow && showMainWindow && !mainWindow.isDestroyed()) {
+    if (!mainWindow.isVisible()) showMainWindow();
+  } else {
+    pendingActivate = true;
+  }
+});
+
 // IPC handlers for renderer process requests
 ipcMain.handle('relaunch-and-exit', () => {
   app.relaunch();
   app.exit(0);
 });
 
-ipcMain.handle('close-window', (event) => {
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) win.close();
+ipcMain.handle('close-window', () => {
+  app.quit();
+});
+
+ipcMain.handle('set-auto-launch', (_event, enabled) => {
+  const autoLauncher = new AutoLaunch({
+    name: 'Unsplash Wallpapers',
+    path: '/Applications/Unsplash Wallpapers.app', // eslint-disable-line
+  });
+  if (enabled) {
+    autoLauncher.enable();
+  } else {
+    autoLauncher.disable();
+  }
+});
+
+ipcMain.on('get-dark-mode', (event) => {
+  event.returnValue = nativeTheme.shouldUseDarkColors;
+});
+
+nativeTheme.on('updated', () => {
+  mainWindow.webContents.send('theme-changed', nativeTheme.shouldUseDarkColors);
 });
 
 app.on('ready', () => {
@@ -36,12 +71,12 @@ app.on('ready', () => {
     const tray = new Tray(
       path.join(__dirname, '../resources/menu-icons/iconTemplate.png'),
     );
-    let window = null;
-    const showWindow = () => {
+
+    showMainWindow = () => {
       log.info('Showing window...');
       const trayPos = tray.getBounds();
+      const windowPos = mainWindow.getBounds();
       log.info(`Tray bounds: x=${trayPos.x} y=${trayPos.y} w=${trayPos.width} h=${trayPos.height}`);
-      const windowPos = window.getBounds();
       log.info(`Window bounds: x=${windowPos.x} y=${windowPos.y} w=${windowPos.width} h=${windowPos.height}`);
       const { screen } = require('electron'); // eslint-disable-line
       const primaryDisplay = screen.getPrimaryDisplay();
@@ -67,40 +102,40 @@ app.on('ready', () => {
           break;
       }
       log.info(`Calculated position: x=${x} y=${y} (screen: ${screenWidth}x${screenHeight})`);
-      window.setPosition(x, y, false);
-      window.show();
-      window.focus();
+      mainWindow.setPosition(x, y, false);
+      mainWindow.show();
+      app.focus({ steal: true });
+      mainWindow.focus();
       log.info('Window shown and focused');
     };
 
+    let lastToggle = 0;
+
     const toggleWindow = () => {
-      if (window.isVisible()) {
-        window.hide();
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      const now = Date.now();
+      if (now - lastToggle < 500) return; // debounce (activate + mouse-down may both fire)
+      lastToggle = now;
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
       } else {
-        showWindow();
+        showMainWindow();
       }
     };
 
-    tray.on('click', (event) => {
-      log.info('Tray clicked');
-      toggleWindow();
-
-      if (window.isVisible() && process.defaultApp && event.metaKey) {
-        window.openDevTools({ mode: 'detach' });
-      }
-    });
-
-    tray.on('right-click', () => {
-      log.info('Tray right-clicked');
+    tray.on('mouse-down', () => {
       toggleWindow();
     });
 
-    tray.on('double-click', () => {
-      log.info('Tray double-clicked');
-      toggleWindow();
-    });
-
-    window = new BrowserWindow({
+    const preloadPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app.asar.unpacked', 'app', 'preload.js')
+      : path.join(__dirname, 'preload.js');
+    
+    log.info(`Preload path: ${preloadPath}`);
+    log.info(`Is packaged: ${app.isPackaged}`);
+    log.info(`Resources path: ${process.resourcesPath}`);
+    
+    mainWindow = new BrowserWindow({
       width,
       height,
       show: false,
@@ -113,34 +148,33 @@ app.on('ready', () => {
         contextIsolation: false,
         nodeIntegration: true,
         sandbox: false,
-        preload: path.join(__dirname, 'preload.js'),
       },
     });
 
-    window.loadURL(`file://${__dirname}/app.html`);
+    // If activate fired before the window was ready, show it now
+    if (pendingActivate) {
+      showMainWindow();
+      pendingActivate = false;
+    }
 
-    window.on('blur', () => {
-      log.info('Window blurred, devtools open:', window.webContents.isDevToolsOpened());
-      setTimeout(() => {
-        if (!window.isDestroyed() && !window.webContents.isDevToolsOpened()) {
-          window.hide();
-          log.info('Window hidden due to blur');
-        }
-      }, 150);
+    mainWindow.loadURL(`file://${__dirname}/app.html`);
+
+    // Forward renderer console to main process logs
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      const levels = ['silly', 'info', 'warn', 'error'];
+      const logLevel = levels[level] || 'info';
+      log[logLevel](`[Renderer] ${message}`);
     });
 
-    window.webContents.once('did-finish-load', () => {
-      log.info('Window finished loading');
+    mainWindow.webContents.once('did-finish-load', () => {
+      log.info('did-finish-load fired');
       autoUpdater.checkForUpdatesAndNotify();
       if (process.env.NODE_ENV === 'development') {
-        window.webContents.openDevTools();
+        mainWindow.webContents.openDevTools();
       }
-      // Auto-show on startup for diagnostics
-      log.info('Auto-showing window on startup...');
-      showWindow();
     });
 
-    window.webContents.on('will-navigate', (event, url) => {
+    mainWindow.webContents.on('will-navigate', (event, url) => {
       event.preventDefault();
       if (url.startsWith('http:') || url.startsWith('https:')) {
         shell.openExternal(url);
@@ -150,7 +184,7 @@ app.on('ready', () => {
     autoUpdater.logger = log;
     autoUpdater.logger.transports.file.level = 'info';
     autoUpdater.on('update-downloaded', () => {
-      window.webContents.send('update-message', 'Update downloaded');
+      mainWindow.webContents.send('update-message', 'Update downloaded');
     });
   }, 300);
 });

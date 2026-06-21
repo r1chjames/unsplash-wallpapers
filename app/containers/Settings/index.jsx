@@ -4,7 +4,6 @@ import React, { Fragment, memo, useState, useEffect } from 'react';
 import type { SyntheticEvent } from 'react';
 import { connect } from 'react-redux';
 import moment from 'moment';
-import AutoLaunch from 'auto-launch';
 import appPackage from '../../../package';
 import StyledSettings from './style';
 import { setActiveTheme, setAutomaticChangeActiveTheme } from './redux';
@@ -35,32 +34,30 @@ const Settings = memo(({
         setIsRunAtStartup(data.isRunAtStartup);
         setAutoUpdateWallpaperSchedule(data.autoUpdateWallpaperSchedule || 'Manually');
       });
-    window.electronAPI.getApiKey().then((key) => {
-      setApiKey(key || '');
-    });
+    if (window.electronAPI && window.electronAPI.getApiKey) {
+      window.electronAPI.getApiKey().then((key) => {
+        setApiKey(key || '');
+      }).catch(() => {});
+    }
   }, []);
 
   const handleQuit = () => {
-    window.electronAPI.closeWindow();
+    if (window.electronAPI) window.electronAPI.closeWindow();
   };
 
   const handleRunInStartup = ({ target: { checked } }) => {
     setIsRunAtStartup(checked);
-    window.electronAPI.storage.set('isRunAtStartup', checked);
-    const minecraftAutoLauncher = new AutoLaunch({
-      name: 'Unsplash Wallpapers',
-      path: '/Applications/Unsplash Wallpapers.app', // eslint-disable-line
-    });
-    if (checked) {
-      minecraftAutoLauncher.enable();
-    } else {
-      minecraftAutoLauncher.disable();
+    if (window.electronAPI && window.electronAPI.storage) {
+      window.electronAPI.storage.set('isRunAtStartup', checked);
+      window.electronAPI.setAutoLaunch(checked);
     }
   };
 
   const handleChangeUpdateWallpaperScadule = (e : SyntheticEvent<HTMLButtonElement>) => {
-    window.electronAPI.storage.set('autoUpdateWallpaperSchedule', e.target.value);
-    window.electronAPI.storage.set('autoUpdateWallpaperLastUpdate', moment().format('MM/DD/YYYY HH:mm:ss'));
+    if (window.electronAPI && window.electronAPI.storage) {
+      window.electronAPI.storage.set('autoUpdateWallpaperSchedule', e.target.value);
+      window.electronAPI.storage.set('autoUpdateWallpaperLastUpdate', moment().format('MM/DD/YYYY HH:mm:ss'));
+    }
   };
 
   const handleChangeTheme = (e : SyntheticEvent<HTMLInputElement>) => {
@@ -98,7 +95,7 @@ const Settings = memo(({
         className="api-key"
         htmlFor="api-key-input"
       >
-        Unsplash API Key
+        Unsplash Access Key
         <input
           id="api-key-input"
           type="password"
@@ -136,7 +133,7 @@ const Settings = memo(({
         <p>
           Theme:
           {
-            (window.electronAPI.platform === 'darwin')
+            (window.electronAPI && window.electronAPI.platform === 'darwin')
             && (
               <Fragment>
                 <span>Change auto by OS</span>

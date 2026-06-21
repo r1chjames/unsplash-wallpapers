@@ -123,7 +123,7 @@ export default styled.div`
     position: absolute;
     bottom: 55px;
     background: ${quitButtonColor};
-    color: ${quitButtonTextColor}
+    color: ${quitButtonTextColor};
     font-size: 12px;
     padding: 5px 10px;
     margin: auto;
