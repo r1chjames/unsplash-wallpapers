@@ -178,8 +178,8 @@ const Settings = memo(({
       <button onClick={handleQuit} className="quit">
         Quit Unsplash Wallpapers
       </button>
-      <a className="author" href="https://github.com/soroushchehresa/unsplash-wallpapers">
-        Made with <i className="fa fa-heart" /> on GitHub (v{appPackage.version})
+      <a className="author" href="https://github.com/r1chjames/unsplash-wallpapers">
+        Unsplash Wallpapers (v{appPackage.version})
       </a>
     </StyledSettings>
   );

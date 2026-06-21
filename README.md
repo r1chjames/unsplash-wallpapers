@@ -26,7 +26,20 @@ git clone https://github.com/r1chjames/unsplash-wallpapers.git unsplash-wallpape
 
 #### 2. Add Unsplash access key
 
-The app reads your key at runtime — it is **not** baked into the build. After starting the app, go to **Settings** and paste your [Unsplash access key](https://unsplash.com/documentation#authorization). The key is stored locally in the app's user data directory.
+The app reads your key at runtime — it is **not** baked into the build. After starting the app, go to **Settings** and paste your Unsplash access key. The key is stored locally in the app's user data directory.
+
+**How to create an Unsplash API key:**
+
+1. Go to [unsplash.com](https://unsplash.com) and create an account (or sign in).
+2. Navigate to the [Unsplash Developer Dashboard](https://unsplash.com/oauth/applications).
+3. Click **New Application**.
+4. Fill in the required fields:
+   - **Application Name** — anything you like (e.g. "Unsplash Wallpapers Desktop").
+   - **Description** — brief summary of what the app does.
+   - **Callback URL** — use `http://localhost` (the app doesn't use OAuth redirects).
+5. Accept the API Terms and click **Create application**.
+6. On the app page, copy the **Access Key** from the "Keys" section.
+7. Paste it into the app's **Settings** screen.
 
 #### 3. Start
 
