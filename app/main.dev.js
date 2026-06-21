@@ -49,7 +49,9 @@ ipcMain.handle('close-window', () => {
 ipcMain.handle('set-auto-launch', (_event, enabled) => {
   const autoLauncher = new AutoLaunch({
     name: 'Unsplash Wallpapers',
-    path: '/Applications/Unsplash Wallpapers.app', // eslint-disable-line
+    ...(process.platform === 'darwin' && {
+      path: '/Applications/Unsplash Wallpapers.app',
+    }),
   });
   if (enabled) {
     autoLauncher.enable();
@@ -199,11 +201,13 @@ storage.has('isRunAtStartup', (error, hasKey) => {
   }
   if (!hasKey) {
     storage.set('isRunAtStartup', true);
-    const minecraftAutoLauncher = new AutoLaunch({
+    const autoLauncher = new AutoLaunch({
       name: 'Unsplash Wallpapers',
-      path: '/Applications/Unsplash Wallpapers.app', // eslint-disable-line
+      ...(process.platform === 'darwin' && {
+        path: '/Applications/Unsplash Wallpapers.app',
+      }),
     });
-    minecraftAutoLauncher.enable();
+    autoLauncher.enable();
   }
 });
 

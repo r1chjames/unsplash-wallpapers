@@ -2,6 +2,12 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 exports.default = async function (context) {
+  // macOS-only: ad-hoc code signing
+  if (process.platform !== 'darwin') {
+    console.log('Skipping ad-hoc signing (not macOS)');
+    return;
+  }
+
   const appOutDir = context.appOutDir;
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(appOutDir, `${appName}.app`);

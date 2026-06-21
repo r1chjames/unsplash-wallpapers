@@ -18,6 +18,9 @@
     "lint-styles": "stylelint --ignore-path .eslintignore '**/*.*(css|scss)' --syntax scss",
     "lint-styles-fix": "yarn --silent lint-styles --fix; exit 0",
     "package": "yarn build && env-cmd ./.env electron-builder build --mac --arm64",
+    "package:mac": "yarn build && env-cmd ./.env electron-builder build --mac --arm64",
+    "package:linux": "yarn build && env-cmd ./.env electron-builder build --linux",
+    "package:win": "yarn build && env-cmd ./.env electron-builder build --win",
     "package:publish": "yarn build && env-cmd ./.env electron-builder build --mac --arm64 --publish always",
     "postinstall": "electron-builder install-app-deps && yarn build-dll && opencollective-postinstall",
     "postlint-fix": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{*{js,jsx,json},babelrc,eslintrc,prettierrc,stylelintrc}'",
@@ -51,12 +54,42 @@
       "entitlements": null,
       "entitlementsInherit": null,
       "identity": null,
+      "category": "public.app-category.utilities",
       "target": [
         {
           "target": "dmg",
           "arch": ["arm64"]
         }
       ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["arm64"]
+        }
+      ]
+    },
+    "linux": {
+      "category": "Utility",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "AppImage",
+          "arch": ["arm64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "afterPack": "./scripts/adhoc-sign.js",
     "dmg": {
@@ -230,7 +263,7 @@
     "electron-json-storage": "^4.3.0",
     "electron-log": "^4.3.0",
     "electron-updater": "^6.0.0",
-    "fix-path": "^2.1.0",
+
     "font-awesome": "^4.7.0",
     "history": "^4.7.2",
     "immutable": "^4.0.0-rc.12",
