@@ -89,7 +89,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName} Setup ${version}-${arch}.${ext}"
     },
     "afterPack": "./scripts/adhoc-sign.js",
     "dmg": {

@@ -22,16 +22,16 @@ jobs:
           - { os: windows-latest,   arch: x64,   target: win }
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'yarn'
 
       - name: Set up QEMU (Linux ARM64)
         if: matrix.target == 'linux' && matrix.arch == 'arm64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Install dependencies
         run: yarn install --ignore-scripts
@@ -78,7 +78,7 @@ jobs:
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.target }}-${{ matrix.arch }}
           path: |
@@ -97,9 +97,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '20'
 
@@ -108,13 +108,12 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: release
-          merge-multiple: true
 
       - name: List artifacts
-        run: ls -la release/
+        run: find release -type f | sort
 
       - name: Delete old release
         continue-on-error: true
@@ -123,16 +122,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: v${{ steps.pkg.outputs.version }}
           tag_name: v${{ steps.pkg.outputs.version }}
           files: |
-            release/*.dmg
-            release/*.blockmap
-            release/*.AppImage
-            release/*.exe
-            release/latest*.yml
+            release/**/*.dmg
+            release/**/*.blockmap
+            release/**/*.AppImage
+            release/**/*.exe
+            release/**/latest*.yml
           body: |
             Unsplash Wallpapers v${{ steps.pkg.outputs.version }}
 
