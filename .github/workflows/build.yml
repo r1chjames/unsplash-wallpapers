@@ -52,10 +52,19 @@ jobs:
         shell: bash
 
       - name: Package
-        run: npx electron-builder build --${{ matrix.target }} --${{ matrix.arch }} --publish never
+        run: |
+          EXTRA_ARGS=""
+          if [ -n "${APPLE_ID:-}" ]; then EXTRA_ARGS="-c.mac.notarize=true"; fi
+          npx electron-builder build --${{ matrix.target }} --${{ matrix.arch }} --publish never $EXTRA_ARGS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # Only used when configured (macOS): Developer ID cert + Apple notarization
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         shell: bash
 
       - name: Verify code signature (macOS)

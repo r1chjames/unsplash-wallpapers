@@ -55,6 +55,33 @@ yarn && yarn package
 
 Output lands in the `release/` directory.
 
+## Releasing (macOS signing & notarization)
+
+`yarn package` works without any Apple credentials — locally it produces an
+ad-hoc signed DMG for personal use. macOS will still show the Gatekeeper warning
+("Apple could not verify 'Unsplash Wallpapers' is free of malware...") because
+the app is not signed with a Developer ID certificate and not notarized.
+
+To ship DMGs that install and open without any warning you need:
+
+1. An [Apple Developer Program](https://developer.apple.com/programs/) membership
+2. A **Developer ID Application** certificate (export your key as a `.p12` file)
+3. Notarization credentials (your Apple ID + an app-specific password)
+
+Configure these GitHub repository **secrets** and the mac CI job will
+automatically sign, notarize and staple the DMG:
+
+| Secret | Value |
+| ------ | ----- |
+| `CSC_LINK` | Base64 of your Developer ID `.p12` certificate |
+| `CSC_KEY_PASSWORD` | Password of the `.p12` |
+| `APPLE_ID` | Apple ID used for notarization |
+| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for that Apple ID |
+| `APPLE_TEAM_ID` | Your Apple Developer Team ID |
+
+Until then, macOS users can open the app the first time with right-click →
+**Open** instead of double-click.
+
 ## Technologies
 
 * [Electron](https://github.com/electron)
