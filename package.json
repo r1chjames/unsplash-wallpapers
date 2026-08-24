@@ -49,11 +49,10 @@
       "package.json"
     ],
     "mac": {
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "entitlements": null,
-      "entitlementsInherit": null,
       "identity": null,
+      "notarize": false,
       "category": "public.app-category.utilities",
       "target": [
         {
