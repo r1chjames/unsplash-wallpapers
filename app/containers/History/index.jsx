@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import type { history as historyType } from 'history';
 import type { Map as MapType } from 'immutable';
 import { withRouter } from 'react-router';
-import wallpaper from 'wallpaper';
+import wallpaper from 'app/utils/wallpaper';
 import { setPhoto } from 'app/containers/Home/redux';
 import Loading from 'app/components/Loading';
 import PhotoItem from './components/PhotoItem';
