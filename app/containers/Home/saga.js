@@ -10,7 +10,7 @@ import {
   call,
 } from 'redux-saga/effects';
 import axios from 'axios';
-import wallpaper from 'wallpaper';
+import wallpaper from 'app/utils/wallpaper';
 import fs from 'fs';
 import os from 'os';
 import util from 'util';
@@ -80,7 +80,12 @@ function* setWallpaper() {
           return;
         }
       }
-      yield wallpaper.set(picturePath, { scale: 'auto' });
+      try {
+        yield wallpaper.set(picturePath, { scale: 'auto' });
+      } catch (error) {
+        yield put({ type: SET_WALLPAPER_FAIL, data: error });
+        return;
+      }
       yield put({ type: SET_WALLPAPER_SUCCESS });
       yield call([window.electronAPI.storage, 'set'], 'autoUpdateWallpaperLastUpdate', moment().format('MM/DD/YYYY HH:mm:ss'));
       if (!hasPicture) {

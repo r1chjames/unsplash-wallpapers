@@ -63,7 +63,6 @@ Output lands in the `release/` directory.
 * [redux-saga](https://github.com/redux-saga/redux-saga)
 * [styled-components](https://github.com/styled-components/styled-components)
 * [Axios](https://github.com/axios/axios)
-* [Wallpaper](https://github.com/sindresorhus/wallpaper)
 
 ## Original project
 
