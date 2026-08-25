@@ -82,6 +82,45 @@ automatically sign, notarize and staple the DMG:
 Until then, macOS users can open the app the first time with right-click →
 **Open** instead of double-click.
 
+## macOS troubleshooting
+
+### "Unsplash Wallpapers is damaged and can't be opened"
+
+This means the app's code signature is broken (macOS failed `codesign --verify`).
+It affected the v1.3.0 rebuilds from **2026-08-24** (between PR #2 and PR #3):
+the binaries carried only linker-generated ad-hoc signatures with **no resource
+seals** (`Sealed Resources=none`).
+
+**Fix: reinstall from a release v1.3.1 or newer** — those are built with the
+signature-seal fix. There is no safe way to repair a broken signature on an
+installed copy.
+
+### "Apple could not verify 'Unsplash Wallpapers' is free of malware…"
+
+Expected behaviour for **ad-hoc signed** builds (any release until the Apple
+Developer secrets from the section above are configured). macOS offers different
+options depending on how the app is signed:
+
+| Signature state | What macOS shows | "Open Anyway" button? |
+| --- | --- | --- |
+| Ad-hoc / unsigned | "Apple could not verify… is free of malware…" | ❌ never offered |
+| Developer ID signed, not notarized | "Apple cannot check it for malicious software…" | ✅ offered in Privacy & Security |
+| Developer ID signed + notarized | nothing — opens silently | — |
+
+To open an ad-hoc build (does this once per download):
+
+1. **Right-click the app in Finder → Open**, then click **Open** in the dialog
+   (not available via the Privacy & Security panel — that path has no button for
+   unsigned/ad-hoc apps), or
+2. In Terminal, clear the macOS quarantine flag:
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/Unsplash Wallpapers.app"
+   ```
+
+After that the app launches normally. To make the dialog disappear for you *and*
+your users, configure the secrets in the "Releasing (macOS signing &
+notarization)" section above and publish the next tagged release.
+
 ## Technologies
 
 * [Electron](https://github.com/electron)
